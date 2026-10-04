@@ -1,0 +1,303 @@
+<title>Sleeper League API Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single reading column, like a coach's playbook; endpoint tables and code scroll in their own frames */
+:root {
+  --bg: #f6f7f4;
+  --surface: #ffffff;
+  --ink: #1b221d;
+  --muted: #5b665e;
+  --line: #dde2db;
+  --turf: #1f6b45;
+  --turf-soft: #e3efe7;
+  --code-bg: #eef1ec;
+  --chalk: #b7791f;
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Source Sans 3", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121714; --surface: #19201b; --ink: #e6ebe5; --muted: #9aa69d; --line: #2c362f;
+    --turf: #5fc08b; --turf-soft: #1d3326; --code-bg: #0e1310; --chalk: #e0aa55; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121714; --surface: #19201b; --ink: #e6ebe5; --muted: #9aa69d; --line: #2c362f;
+  --turf: #5fc08b; --turf-soft: #1d3326; --code-bg: #0e1310; --chalk: #e0aa55; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 1.0625rem/1.6 var(--font-body); }
+.wrap { max-width: 52rem; margin: 0 auto; padding-inline: 20px; padding-block: 48px 80px; display: grid; gap: 56px; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; line-height: 1.1; margin: 0; }
+h1 { font-size: clamp(2.4rem, 6vw, 3.4rem); letter-spacing: .01em; }
+h2 { font-size: 1.9rem; display: flex; align-items: baseline; gap: 12px; }
+h3 { font-size: 1.3rem; }
+p { margin: 0; }
+a { color: var(--turf); }
+.eyebrow { font: 600 .78rem/1 var(--font-body); text-transform: uppercase; letter-spacing: .12em; color: var(--turf); }
+.section { display: grid; gap: 18px; min-width: 0; }
+.lede { font-size: 1.2rem; color: var(--muted); max-width: 40rem; }
+code { font-family: var(--font-mono); font-size: .86em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+
+/* verdict scoreboard */
+.board { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; }
+.board div { padding: 16px 18px; border-right: 1px solid var(--line); display: grid; gap: 4px; }
+.board div:last-child { border-right: 0; }
+.board b { font: 700 1.6rem/1 var(--font-display); color: var(--turf); }
+.board span { font-size: .9rem; color: var(--muted); }
+
+/* concepts */
+.terms { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.term { padding: 14px 16px; border-top: 3px solid var(--turf); background: var(--surface); display: grid; gap: 6px; align-content: start; }
+.term code { justify-self: start; }
+.term p { font-size: .95rem; color: var(--muted); }
+
+/* endpoints */
+.tablebox { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: .95rem; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 600 .75rem/1 var(--font-body); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); background: var(--code-bg); }
+tr.group td { font: 700 1.05rem/1 var(--font-display); letter-spacing: .03em; color: var(--turf); background: var(--turf-soft); padding-block: 8px; }
+tr:last-child td { border-bottom: 0; }
+td code { background: none; padding: 0; white-space: nowrap; }
+.base { font-family: var(--font-mono); font-size: .95rem; }
+
+/* steps */
+ol.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; counter-reset: s; }
+ol.steps > li { counter-increment: s; display: grid; grid-template-columns: 44px 1fr; gap: 14px; }
+ol.steps > li::before { content: counter(s); font: 700 1.5rem/44px var(--font-display); text-align: center; width: 44px; height: 44px; border-radius: 50%; background: var(--turf); color: var(--bg); }
+.step { display: grid; gap: 8px; min-width: 0; padding-top: 6px; }
+.step p { color: var(--muted); }
+
+/* code blocks */
+.code { position: relative; min-width: 0; }
+pre { margin: 0; background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; font: 400 .84rem/1.55 var(--font-mono); }
+pre code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+.copy { position: absolute; top: 8px; right: 8px; font: 600 .75rem/1 var(--font-body); padding: 6px 10px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.copy:hover { border-color: var(--turf); color: var(--turf); }
+.copy:focus-visible, a:focus-visible { outline: 2px solid var(--turf); outline-offset: 2px; }
+
+/* history chain diagram */
+.chain { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: .9rem; }
+.chain .node { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 12px; display: grid; gap: 2px; }
+.chain .node b { font: 700 1.1rem/1 var(--font-display); }
+.chain .node small { font-family: var(--font-mono); color: var(--muted); font-size: .72rem; }
+.chain .arrow { color: var(--chalk); font-family: var(--font-mono); font-size: .8rem; }
+
+/* gotchas */
+ul.notes { margin: 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+ul.notes li { padding-left: 18px; position: relative; }
+ul.notes li::before { content: ""; position: absolute; left: 0; top: .6em; width: 7px; height: 7px; background: var(--chalk); transform: rotate(45deg); }
+.foot { font-size: .9rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 18px; }
+@media (max-width: 480px) { ol.steps > li { grid-template-columns: 1fr; } .board div { border-right: 0; border-bottom: 1px solid var(--line); } }
+</style>
+
+<main class="wrap">
+
+<header class="section">
+  <span class="eyebrow">Research brief · checked live October 4, 2026</span>
+  <h1>Sleeper League API Guide</h1>
+  <p class="lede">Yes, Sleeper has a public API. You can pull your league's current season and every past season with plain HTTP GET requests. No account, API key, or login is needed.</p>
+  <div class="board">
+    <div><b>Free</b><span>for non-commercial use</span></div>
+    <div><b>No auth</b><span>read-only, no token</span></div>
+    <div><b>&lt;1000/min</b><span>stay under this or risk an IP block</span></div>
+    <div><b>JSON</b><span>every response</span></div>
+  </div>
+  <p>Base URL: <span class="base">https://api.sleeper.app/v1</span> · Official docs: <a href="https://docs.sleeper.com" target="_blank" rel="noopener">docs.sleeper.com</a></p>
+</header>
+
+<section class="section">
+  <h2>How the data fits together</h2>
+  <p>Five IDs connect everything. Once you have these straight, the rest is joining tables.</p>
+  <div class="terms">
+    <div class="term"><code>user_id</code><p>A person. Look it up from your username. Stays the same forever.</p></div>
+    <div class="term"><code>league_id</code><p>One league <em>for one season</em>. Sleeper creates a new league_id every time a league renews.</p></div>
+    <div class="term"><code>previous_league_id</code><p>Field on each league that points to last season's league_id. Follow it to walk back through history.</p></div>
+    <div class="term"><code>roster_id</code><p>A team slot in a league (1, 2, 3…). Matchups and transactions use this, not user_id. Rosters map it to an owner_id.</p></div>
+    <div class="term"><code>player_id</code><p>A player, like <code>"4046"</code>. Team defenses use the team code, like <code>"CAR"</code>. Translate with the players file.</p></div>
+    <div class="term"><code>matchup_id</code><p>In a week's matchups, the two rosters sharing a matchup_id played each other.</p></div>
+  </div>
+</section>
+
+<section class="section">
+  <h2>Endpoints</h2>
+  <p>All are <code>GET</code> requests on the base URL. Use <code>nfl</code> for sport.</p>
+  <div class="tablebox">
+    <table>
+      <thead><tr><th>Path</th><th>What you get</th></tr></thead>
+      <tbody>
+        <tr class="group"><td colspan="2">User</td></tr>
+        <tr><td><code>/user/{username}</code></td><td>Your user object, including <code>user_id</code></td></tr>
+        <tr><td><code>/user/{user_id}/leagues/nfl/{season}</code></td><td>Every league you were in that season</td></tr>
+        <tr><td><code>/user/{user_id}/drafts/nfl/{season}</code></td><td>Every draft you were in that season</td></tr>
+        <tr class="group"><td colspan="2">League</td></tr>
+        <tr><td><code>/league/{league_id}</code></td><td>Name, settings, scoring, roster slots, status, <code>previous_league_id</code></td></tr>
+        <tr><td><code>/league/{league_id}/users</code></td><td>Members: display names, team names, avatars</td></tr>
+        <tr><td><code>/league/{league_id}/rosters</code></td><td>Each team's players, starters, wins, losses, points for and against</td></tr>
+        <tr><td><code>/league/{league_id}/matchups/{week}</code></td><td>Scores for one week, plus points per player</td></tr>
+        <tr><td><code>/league/{league_id}/winners_bracket</code></td><td>Playoff bracket</td></tr>
+        <tr><td><code>/league/{league_id}/losers_bracket</code></td><td>Consolation bracket</td></tr>
+        <tr><td><code>/league/{league_id}/transactions/{week}</code></td><td>Trades, waivers, and free agent moves for that week</td></tr>
+        <tr><td><code>/league/{league_id}/traded_picks</code></td><td>Draft picks that have changed hands</td></tr>
+        <tr><td><code>/league/{league_id}/drafts</code></td><td>Drafts for that league season</td></tr>
+        <tr class="group"><td colspan="2">Draft</td></tr>
+        <tr><td><code>/draft/{draft_id}</code></td><td>Draft settings, type, order</td></tr>
+        <tr><td><code>/draft/{draft_id}/picks</code></td><td>Every pick, in order, with who picked whom</td></tr>
+        <tr><td><code>/draft/{draft_id}/traded_picks</code></td><td>Picks traded during that draft</td></tr>
+        <tr class="group"><td colspan="2">Players and NFL state</td></tr>
+        <tr><td><code>/players/nfl</code></td><td>All players keyed by player_id (about 5 MB). Fetch at most once a day and cache it. Accepts <code>?position=QB&amp;active=true</code></td></tr>
+        <tr><td><code>/players/nfl/trending/add</code></td><td>Most-added players. Also <code>/drop</code>. Accepts <code>?lookback_hours=24&amp;limit=25</code></td></tr>
+        <tr><td><code>/state/nfl</code></td><td>Current season and week. Use it to know which week is "now"</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="color:var(--muted);font-size:.95rem">Avatars: <code>https://sleepercdn.com/avatars/{avatar_id}</code>, or <code>/avatars/thumbs/{avatar_id}</code> for a thumbnail.</p>
+</section>
+
+<section class="section">
+  <h2>Steps to pull your league</h2>
+  <p>You can paste each URL into a browser to see the JSON. Swap in your own values where you see braces.</p>
+  <ol class="steps">
+    <li><div class="step">
+      <h3>Get your user_id from your username</h3>
+      <p>Your username is the handle shown in the Sleeper app (not your email).</p>
+      <div class="code"><pre><code>curl https://api.sleeper.app/v1/user/YOUR_USERNAME</code></pre></div>
+      <p>Copy <code>user_id</code> from the response.</p>
+    </div></li>
+    <li><div class="step">
+      <h3>Check the current season and week</h3>
+      <div class="code"><pre><code>curl https://api.sleeper.app/v1/state/nfl</code></pre></div>
+      <p>When I called it today it returned <code>"season": "2026"</code> and <code>"week": 4</code>.</p>
+    </div></li>
+    <li><div class="step">
+      <h3>Find your league_id for this season</h3>
+      <div class="code"><pre><code>curl https://api.sleeper.app/v1/user/{user_id}/leagues/nfl/2026</code></pre></div>
+      <p>Pick your league by <code>name</code> and copy its <code>league_id</code>. It's also in the app's web URL: <code>sleeper.com/leagues/{league_id}/…</code></p>
+    </div></li>
+    <li><div class="step">
+      <h3>Pull the members and the rosters, then join them</h3>
+      <div class="code"><pre><code>curl https://api.sleeper.app/v1/league/{league_id}/users
+curl https://api.sleeper.app/v1/league/{league_id}/rosters</code></pre></div>
+      <p>Match <code>rosters[].owner_id</code> to <code>users[].user_id</code>. Now each roster_id has a name. Standings live in <code>rosters[].settings</code>: <code>wins</code>, <code>losses</code>, <code>ties</code>, <code>fpts</code>, <code>fpts_decimal</code>, <code>fpts_against</code>.</p>
+    </div></li>
+    <li><div class="step">
+      <h3>Pull weekly matchups</h3>
+      <div class="code"><pre><code>curl https://api.sleeper.app/v1/league/{league_id}/matchups/1</code></pre></div>
+      <p>Loop week 1 through the current week. Group results by <code>matchup_id</code> to get head-to-head pairs. Each entry has <code>points</code>, <code>starters</code>, and <code>players_points</code>.</p>
+    </div></li>
+    <li><div class="step">
+      <h3>Pull transactions, playoffs, and the draft</h3>
+      <div class="code"><pre><code>curl https://api.sleeper.app/v1/league/{league_id}/transactions/1
+curl https://api.sleeper.app/v1/league/{league_id}/winners_bracket
+curl https://api.sleeper.app/v1/league/{league_id}/drafts
+curl https://api.sleeper.app/v1/draft/{draft_id}/picks</code></pre></div>
+      <p>The number on transactions is the week (Sleeper calls it a "round" or "leg"). Each transaction has a <code>type</code>: <code>trade</code>, <code>waiver</code>, or <code>free_agent</code>.</p>
+    </div></li>
+    <li><div class="step">
+      <h3>Walk back through past seasons</h3>
+      <p>Read <code>previous_league_id</code> from the league object and repeat steps 4 to 6 with it. Stop when it is <code>null</code> or <code>"0"</code>.</p>
+      <div class="chain" aria-label="League history chain">
+        <div class="node"><b>2026</b><small>league_id</small></div><span class="arrow">previous_league_id →</span>
+        <div class="node"><b>2025</b><small>league_id</small></div><span class="arrow">previous_league_id →</span>
+        <div class="node"><b>2024</b><small>league_id</small></div><span class="arrow">→ … until null</span>
+      </div>
+      <p>For a past season, the final regular-season week is <code>settings.playoff_week_start − 1</code> on the league object. Playoff weeks follow it.</p>
+    </div></li>
+    <li><div class="step">
+      <h3>Translate player IDs into names</h3>
+      <div class="code"><pre><code>curl -o players.json https://api.sleeper.app/v1/players/nfl</code></pre></div>
+      <p>Save it to a file and look up names locally. Don't call this inside a loop.</p>
+    </div></li>
+  </ol>
+</section>
+
+<section class="section">
+  <h2>Starter script</h2>
+  <p>Python, standard library only. Set your username and league name, run it, and it saves every season of your league to a <code>sleeper_data/</code> folder.</p>
+  <div class="code"><button class="copy" type="button" data-target="py">Copy</button><pre><code id="py">import json, os, time, urllib.request
+
+USERNAME = "your_sleeper_username"
+LEAGUE_NAME = "Your League Name"   # as shown in the app
+BASE = "https://api.sleeper.app/v1"
+OUT = "sleeper_data"
+
+def get(path):
+    with urllib.request.urlopen(f"{BASE}{path}") as r:
+        time.sleep(0.1)            # stay far under 1000 calls/minute
+        return json.load(r)
+
+def save(name, data):
+    os.makedirs(OUT, exist_ok=True)
+    with open(os.path.join(OUT, name), "w") as f:
+        json.dump(data, f, indent=2)
+
+user = get(f"/user/{USERNAME}")
+state = get("/state/nfl")
+season = state["season"]
+
+leagues = get(f"/user/{user['user_id']}/leagues/nfl/{season}")
+league_id = next(l["league_id"] for l in leagues if l["name"] == LEAGUE_NAME)
+
+while league_id and league_id != "0":
+    league = get(f"/league/{league_id}")
+    yr = league["season"]
+    print(f"Pulling {yr}: {league['name']}")
+
+    # last week with games: current week this season, full season for past years
+    if yr == state["season"]:
+        last_week = state["week"]
+    else:
+        last_week = league["settings"].get("playoff_week_start", 15) + 2
+
+    data = {
+        "league": league,
+        "users": get(f"/league/{league_id}/users"),
+        "rosters": get(f"/league/{league_id}/rosters"),
+        "matchups": {w: get(f"/league/{league_id}/matchups/{w}") for w in range(1, last_week + 1)},
+        "transactions": {w: get(f"/league/{league_id}/transactions/{w}") for w in range(1, last_week + 1)},
+        "winners_bracket": get(f"/league/{league_id}/winners_bracket"),
+        "losers_bracket": get(f"/league/{league_id}/losers_bracket"),
+        "drafts": get(f"/league/{league_id}/drafts"),
+    }
+    data["draft_picks"] = {d["draft_id"]: get(f"/draft/{d['draft_id']}/picks") for d in data["drafts"]}
+    save(f"{yr}.json", data)
+
+    league_id = league.get("previous_league_id")
+
+if not os.path.exists(os.path.join(OUT, "players.json")):
+    save("players.json", get("/players/nfl"))   # ~5 MB, once
+print("Done.")</code></pre></div>
+</section>
+
+<section class="section">
+  <h2>Things to know</h2>
+  <ul class="notes">
+    <li><strong>Read-only.</strong> You can't set lineups, make trades, or change anything through the API.</li>
+    <li><strong>History only goes as far back as your league does on Sleeper.</strong> If the league moved from ESPN or Yahoo, seasons before the move aren't there.</li>
+    <li><strong>A broken chain is possible.</strong> If a commissioner made a brand-new league instead of renewing, <code>previous_league_id</code> won't link them. Use step 3 with the older season number to find the old league_id.</li>
+    <li><strong>Points come in two parts</strong> on rosters: <code>fpts</code> (whole number) and <code>fpts_decimal</code>. Add them: <code>fpts + fpts_decimal / 100</code>.</li>
+    <li><strong>No official stats or projections endpoint.</strong> People reference undocumented ones online. They can change without notice, so I'd avoid relying on them.</li>
+    <li><strong>Commercial use needs a license.</strong> Personal projects and league tools are fine under the free terms.</li>
+    <li><strong>A docs typo:</strong> one heading says <code>loses_bracket</code>. The working path is <code>losers_bracket</code>.</li>
+  </ul>
+</section>
+
+<p class="foot">Sources: Sleeper's official API docs at docs.sleeper.com, and live calls to <code>/state/nfl</code> and <code>/players/nfl/trending/add</code> on October 4, 2026, which both returned data with no authentication.</p>
+</main>
+
+<script>
+document.querySelectorAll(".copy").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const el = document.getElementById(btn.dataset.target);
+    const done = () => { btn.textContent = "Copied"; setTimeout(() => btn.textContent = "Copy", 1500); };
+    navigator.clipboard.writeText(el.textContent).then(done).catch(() => {
+      const r = document.createRange(); r.selectNodeContents(el);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      btn.textContent = "Selected, press ⌘C";
+    });
+  });
+});
+</script>
