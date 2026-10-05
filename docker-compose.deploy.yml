@@ -2,14 +2,14 @@
 # existing n8n stack, whose Traefik terminates TLS (cert resolver
 # `mytlschallenge`, network `n8n_default`).
 #
-# The image builds straight from GitHub, so deploying an update is: push to
-# main, then "Update" the `sleeper-playground` Docker project in hPanel (or
-# `docker compose up -d --build` on the VPS).
+# Run from a clone of this repo on the VPS:
+#   docker compose -f docker-compose.deploy.yml up -d --build
+# To ship an update: push to main, then on the VPS `git pull` and rerun the above.
 
 services:
   sleeper:
     build:
-      context: https://github.com/xxlillusion/sleeper-playground.git#main
+      context: .
     image: sleeper-explorer:latest
     pull_policy: build
     restart: always
