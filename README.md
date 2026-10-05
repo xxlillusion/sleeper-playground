@@ -26,3 +26,9 @@ docker compose up -d --build
 ```
 
 To update later: `git pull && docker compose up -d --build`.
+
+### Hostinger VPS (Traefik)
+
+`docker-compose.deploy.yml` builds from this repo on GitHub and serves the site at
+https://fantasy.maybesomething.tech through the VPS's existing Traefik proxy. To ship an
+update, push to `main`, then "Update" the `sleeper-playground` Docker project in hPanel.
