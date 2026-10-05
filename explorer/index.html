@@ -401,11 +401,14 @@ const cacheClear = () => cacheRun("readwrite", s => s.clear());
 // to roll over keeps late stat corrections out of the cache. A finished draft is frozen whatever its league is doing.
 const CACHEABLE = /^\/(league|draft)\/(\d+)(\/.*)?$/;
 const DONE = new Set(), DRAFTS = new Set();
-function noteFrozen(data) {
+// Told apart by path, not shape: league and draft objects both carry league_id, draft_id, status and season.
+function noteFrozen(path, data) {
+  const drafts = /^\/league\/\d+\/drafts$/.test(path);
+  if (!drafts && !/^\/league\/\d+$|^\/user\/[^/]+\/leagues\//.test(path)) return;
   for (const x of Array.isArray(data) ? data : [data]) {
-    if (!x || x.status !== "complete") continue;
-    if (x.draft_id) DRAFTS.add(String(x.draft_id));
-    else if (x.league_id && S.nfl && +x.season < +S.nfl.season) DONE.add(String(x.league_id));
+    if (x?.status !== "complete") continue;
+    if (drafts) DRAFTS.add(String(x.draft_id));
+    else if (S.nfl && +x.season < +S.nfl.season) DONE.add(String(x.league_id));
   }
 }
 function frozen(path, data) {
@@ -418,7 +421,7 @@ const log = [];
 async function api(path, opts = {}) {
   const hit = CACHEABLE.test(path) ? await cacheGet(path) : null;
   if (hit) {
-    noteFrozen(hit.data);
+    noteFrozen(path, hit.data);
     log.push({ id: log.length + 1, path, status: "ok", cached: true, at: hit.at, bytes: hit.bytes, data: hit.data }); renderLog();
     return hit.data;
   }
@@ -437,7 +440,7 @@ async function api(path, opts = {}) {
       : data;
     renderLog();
     if (!r.ok) throw new Error(`Sleeper returned ${r.status} for ${path}`);
-    noteFrozen(data);
+    noteFrozen(path, data);
     if (frozen(path, data)) await cachePut({ path, data, bytes: e.bytes, at: Date.now() });
     return data;
   } catch (err) {

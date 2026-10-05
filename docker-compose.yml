@@ -1,0 +1,8 @@
+services:
+  sleeper-explorer:
+    build: .
+    image: sleeper-explorer:latest
+    container_name: sleeper-explorer
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-8080}:80"
