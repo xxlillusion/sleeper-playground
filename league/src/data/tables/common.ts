@@ -97,5 +97,28 @@ export function slotToRoster(raw: SeasonRaw, d: Draft): Record<number, number> {
   return s2r;
 }
 
+/* Strength of schedule for one season: how good each team's opponents were, and whether they played above their own average against you */
+export interface Sos { oppPpgAvg: number | null; oppWinPctAvg: number | null; oppVsAvg: number | null; n: number; rank: number | null }
+export function sosFor(m: SeasonModel): Record<number, Sos> {
+  const ppg: Record<number, number | null> = {};
+  for (const ts of Object.values(m.teamStats)) ppg[ts.rid] = ts.g ? ts.pf / ts.g : null;
+  const winPct = (rid: number) => { const s = m.teams[rid]?.roster.settings || {}; const w = s.wins || 0, l = s.losses || 0, t = s.ties || 0; return w + l + t ? (w + t / 2) / (w + l + t) : null; };
+  const acc: Record<number, { p: number; wp: number; d: number; n: number; nwp: number }> = {};
+  for (const w of m.weekly) {
+    if (w.kind !== "regular" || !w.final || w.oppRid == null || w.oppPts == null || w.pts <= 0) continue;
+    const a = (acc[w.rid] ??= { p: 0, wp: 0, d: 0, n: 0, nwp: 0 });
+    const op = ppg[w.oppRid]; if (op == null) continue;
+    a.p += op; a.d += w.oppPts - op; a.n++;
+    const wp = winPct(w.oppRid); if (wp != null) { a.wp += wp; a.nwp++; }
+  }
+  const out: Record<number, Sos> = {};
+  for (const t of Object.values(m.teams)) {
+    const a = acc[t.rid];
+    out[t.rid] = a && a.n ? { oppPpgAvg: r2(a.p / a.n), oppWinPctAvg: a.nwp ? r2(a.wp / a.nwp * 100) : null, oppVsAvg: r2(a.d / a.n), n: a.n, rank: null } : { oppPpgAvg: null, oppWinPctAvg: null, oppVsAvg: null, n: 0, rank: null };
+  }
+  Object.values(m.teams).filter(t => out[t.rid].oppPpgAvg != null).sort((x, y) => out[y.rid].oppPpgAvg! - out[x.rid].oppPpgAvg!).forEach((t, i) => { out[t.rid].rank = i + 1; });
+  return out;
+}
+
 export const SLOT_NAMES = new Set(["BN", "IR", "TAXI"]);
 export const starterSlots = (positions: string[]) => positions.filter(p => !SLOT_NAMES.has(p));

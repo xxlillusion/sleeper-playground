@@ -1,6 +1,7 @@
 import type { Row } from "../../perspective/engine";
 import { paOf, pfOf, ppOf, r2 } from "../weeks";
-import { div, draftInfo, nameOf, pct, rec, seasonCols, teamCols, txStats, view, type TableDef } from "./common";
+import { div, draftInfo, nameOf, pct, rec, seasonCols, sosFor, teamCols, txStats, view, type TableDef } from "./common";
+import { lineupAgg } from "./lineups";
 
 export const teams: TableDef = {
   id: "teams",
@@ -12,7 +13,9 @@ export const teams: TableDef = {
     is_open_slot: "boolean", is_commissioner: "boolean", co_owners: "string", co_owner_count: "integer", division: "integer", division_name: "string",
     is_complete: "boolean", is_live: "boolean",
     wins: "integer", losses: "integer", ties: "integer", record: "string", win_pct: "float", record_string: "string", streak: "string",
-    pf: "float", pa: "float", max_pf: "float", lineup_efficiency: "float", total_moves: "integer", waiver_budget_used: "integer", waiver_position: "integer",
+    pf: "float", pa: "float", sleeper_max_pf: "float", sleeper_efficiency_pct: "float", total_moves: "integer",
+    optimal_points: "float", points_left_on_bench: "float", efficiency_pct: "float", perfect_lineups: "integer", games_lost_to_lineup: "integer",
+    opp_season_ppg_avg: "float", opp_win_pct_avg: "float", opp_pts_vs_their_avg: "float", sos_rank: "integer", wins_vs_median_wins: "integer", waiver_budget_used: "integer", waiver_position: "integer",
     reg_rank: "integer", points_rank: "integer",
     h2h_wins: "integer", h2h_losses: "integer", h2h_ties: "integer", games_played: "integer", ppg: "float", pa_pg: "float",
     all_play_wins: "integer", all_play_losses: "integer", all_play_ties: "integer", all_play_pct: "float", expected_wins: "float", luck: "float",
@@ -26,15 +29,16 @@ export const teams: TableDef = {
   },
   build({ ds }) {
     const rows: Row[] = [];
+    const lagg = lineupAgg(ds);
     for (const m of ds.models) {
-      const sum = m.summary, tx = txStats(m.raw), dr = draftInfo(m.raw);
+      const sum = m.summary, tx = txStats(m.raw), dr = draftInfo(m.raw), sos = sosFor(m);
       const seeds = Object.values(m.teams).filter(t => sum.inPlayoffs.has(t.rid)).sort((a, b) => sum.regRank[a.rid] - sum.regRank[b.rid]);
       const userName = (uid: string | null) => (uid ? nameOf(ds, uid, m.raw.users.find(u => u.user_id === uid)?.display_name ?? uid) : null);
       for (const t of Object.values(m.teams)) {
         const r = t.roster, s = r.settings || {}, st = m.teamStats[t.rid], fr = sum.finalRank[t.rid];
         const pf = pfOf(r), pa = paOf(r), mx = ppOf(r);
         const w = s.wins || 0, l = s.losses || 0, ti = s.ties || 0;
-        const txs = tx?.[t.rid], di = dr?.[t.rid];
+        const txs = tx?.[t.rid], di = dr?.[t.rid], la = lagg.get(`${m.sid}:${t.rid}`) ?? null, so = sos[t.rid];
         const draftedBy = di?.draftedByUid ?? null;
         rows.push({
           ...seasonCols(m), ...teamCols(ds, t, t.rid, m.sid), manager_name_that_season: t.isOpen ? null : t.manager,
@@ -42,7 +46,10 @@ export const teams: TableDef = {
           division: s.division ?? null, division_name: s.division != null ? m.raw.league.metadata?.[`division_${s.division}`] ?? null : null,
           is_complete: m.complete, is_live: m.raw.isLive,
           wins: w, losses: l, ties: ti, record: rec(w, l, ti), win_pct: pct(w, l, ti), record_string: r.metadata?.record ?? null, streak: r.metadata?.streak ?? null,
-          pf: r2(pf), pa: r2(pa), max_pf: mx ? r2(mx) : null, lineup_efficiency: mx ? r2(pf / mx * 100) : null,
+          pf: r2(pf), pa: r2(pa), sleeper_max_pf: mx ? r2(mx) : null, sleeper_efficiency_pct: mx ? r2(pf / mx * 100) : null,
+          optimal_points: la ? r2(la.optimal) : null, points_left_on_bench: la ? r2(la.left) : null, efficiency_pct: la && la.optimal ? r2(la.actual / la.optimal * 100) : null,
+          perfect_lineups: la ? la.perfect : null, games_lost_to_lineup: la ? la.lostToLineup : null,
+          opp_season_ppg_avg: so.oppPpgAvg, opp_win_pct_avg: so.oppWinPctAvg, opp_pts_vs_their_avg: so.oppVsAvg, sos_rank: so.rank, wins_vs_median_wins: st.g ? st.h2h.w - st.med.w : null,
           total_moves: s.total_moves ?? 0, waiver_budget_used: s.waiver_budget_used ?? null, waiver_position: s.waiver_position ?? null,
           reg_rank: sum.regRank[t.rid] ?? null, points_rank: sum.pointsRank[t.rid] ?? null,
           h2h_wins: st.h2h.w, h2h_losses: st.h2h.l, h2h_ties: st.h2h.t, games_played: st.g, ppg: div(st.pf, st.g), pa_pg: div(st.pa, st.g),
@@ -71,5 +78,7 @@ export const teams: TableDef = {
     { name: "Points for by manager and season", config: view({ plugin: "Y Bar", group_by: ["manager"], split_by: ["season"], columns: ["pf"], aggregates: { pf: "sum" }, sort: [["pf", "desc"]] }) },
     { name: "Luck: real wins vs expected", config: view({ plugin: "X/Y Scatter", group_by: ["manager", "season"], columns: ["expected_wins", "wins", null, null, "manager"], aggregates: { expected_wins: "sum", wins: "sum", manager: "any" } }) },
     { name: "Final rank heatmap", config: view({ plugin: "Datagrid", group_by: ["manager"], split_by: ["season"], columns: ["final_rank"], aggregates: { final_rank: "any" }, plugin_config: {}, columns_config: { final_rank: { number_color_mode: "gradient" } } }) },
+    { name: "Strength of schedule", config: view({ columns: ["season", "manager", "record", "pf", "opp_season_ppg_avg", "opp_win_pct_avg", "opp_pts_vs_their_avg", "sos_rank", "luck", "wins_vs_median_wins"], sort: [["season", "desc"], ["sos_rank", "asc"]] }) },
+    { name: "Lineup efficiency", config: view({ columns: ["season", "manager", "record", "pf", "optimal_points", "points_left_on_bench", "efficiency_pct", "perfect_lineups", "games_lost_to_lineup", "sleeper_efficiency_pct"], sort: [["season", "desc"], ["efficiency_pct", "desc"]] }) },
   ],
 };

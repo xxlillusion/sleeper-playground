@@ -17,6 +17,7 @@ export const games: TableDef = {
     points: "float", opp_points: "float", margin: "float", total_points: "float", result: "string", won: "boolean",
     bench_points: "float", week_rank: "integer", teams_scoring: "integer", is_week_high: "boolean", is_week_low: "boolean", opp_week_rank: "integer",
     season_game_no: "integer", cum_wins: "integer", cum_losses: "integer", streak: "string",
+    opp_season_ppg: "float", opp_pts_vs_avg: "float",
   },
   build({ ds }) {
     const rows: Row[] = [];
@@ -30,6 +31,7 @@ export const games: TableDef = {
         const t = (tally[me.rid] ??= { n: 0, w: 0, l: 0, run: 0, r: "" });
         if (g.kind !== "consolation") { t.n++; if (res === "W") t.w++; if (res === "L") t.l++; t.run = t.r === res ? t.run + 1 : 1; t.r = res; }
         const ws = g.multi ? null : wk.get(`${g.week}:${me.rid}`), ows = g.multi ? null : wk.get(`${g.week}:${op.rid}`);
+        const ots = m.teamStats[op.rid], oppPpg = ots && ots.g ? r2(ots.pf / ots.g) : null;
         rows.push({
           game_id: `${g.id}:${me.rid}`, ...seasonCols(m),
           week: g.week, week_end: g.weekEnd, weeks: g.weeks.join("-"), is_multi_week: g.multi,
@@ -41,6 +43,7 @@ export const games: TableDef = {
           is_week_high: ws ? ws.rank === 1 : null, is_week_low: ws ? ws.rank === ws.n && ws.n > 1 : null, opp_week_rank: ows?.rank ?? null,
           season_game_no: g.kind === "consolation" ? null : t.n, cum_wins: g.kind === "consolation" ? null : t.w, cum_losses: g.kind === "consolation" ? null : t.l,
           streak: g.kind === "consolation" ? null : `${t.r}${t.run}`,
+          opp_season_ppg: oppPpg, opp_pts_vs_avg: oppPpg != null ? r2(op.pts - oppPpg) : null,
         });
       }
     }

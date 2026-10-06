@@ -1,7 +1,9 @@
 import type { Row } from "../../perspective/engine";
 import { avatarUrl } from "../teams";
 import { r2 } from "../weeks";
-import { div, draftInfo, pct, rec, txStats, view, type TableDef } from "./common";
+import { div, draftInfo, pct, rec, sosFor, txStats, view, type TableDef } from "./common";
+import { lineupAgg } from "./lineups";
+import { pickupAgg } from "./pickups";
 
 interface Agg {
   uid: string; name: string; avatar: string | null; seasons: number[]; coSeasons: number[]; commish: number;
@@ -10,6 +12,7 @@ interface Agg {
   highs: number; lows: number; po: { w: number; l: number }; co: { w: number; l: number }; official: { w: number; l: number; t: number }; moves: number;
   tx: { trades: number; waivers: number; fa: number; faab: number; bid: number } | null; dr: { picks: number; auction: number; keepers: number } | null;
   bestW: { n: number; span: string }; bestL: { n: number; span: string }; cur: { r: string; n: number } | null; start?: string;
+  lu: { actual: number; optimal: number; left: number; lost: number } | null; sos: { p: number; d: number; n: number };
 }
 
 export const managers: TableDef = {
@@ -28,6 +31,9 @@ export const managers: TableDef = {
     official_wins: "integer", official_losses: "integer", official_ties: "integer",
     playoff_wins: "integer", playoff_losses: "integer", consolation_wins: "integer", consolation_losses: "integer", best_finish: "integer", worst_finish: "integer", avg_finish: "float",
     total_moves: "integer", trades: "integer", waiver_moves: "integer", free_agent_adds: "integer", faab_spent: "integer", biggest_faab_bid: "integer", draft_picks_made: "integer", auction_dollars_spent: "integer", keepers_used: "integer",
+    efficiency_pct: "float", points_left_on_bench: "float", games_lost_to_lineup: "integer",
+    opp_season_ppg_avg: "float", opp_pts_vs_their_avg: "float",
+    pickup_starter_points: "float", faab_points_per_dollar: "float", best_pickup: "string", best_pickup_points: "float",
   },
   build({ ds }) {
     const agg: Record<string, Agg> = {};
@@ -35,10 +41,12 @@ export const managers: TableDef = {
       uid, name, avatar, seasons: [], coSeasons: [], commish: 0, titles: 0, runnerUps: 0, thirds: 0, lasts: 0, playoffs: 0, finishes: [],
       reg: { w: 0, l: 0, t: 0, pf: 0, pa: 0, g: 0 }, ap: { w: 0, l: 0, t: 0 }, exp: 0, med: { w: 0, l: 0 }, highs: 0, lows: 0, po: { w: 0, l: 0 }, co: { w: 0, l: 0 },
       official: { w: 0, l: 0, t: 0 }, moves: 0, tx: null, dr: null, bestW: { n: 0, span: "" }, bestL: { n: 0, span: "" }, cur: null,
+      lu: null, sos: { p: 0, d: 0, n: 0 },
     });
     const latest = ds.models[ds.models.length - 1];
+    const lagg = lineupAgg(ds), pagg = pickupAgg(ds);
     for (const m of ds.models) {
-      const sum = m.summary, tx = txStats(m.raw), dr = draftInfo(m.raw);
+      const sum = m.summary, tx = txStats(m.raw), dr = draftInfo(m.raw), sos = sosFor(m);
       for (const t of Object.values(m.teams)) {
         if (t.isOpen) continue;
         const a = get(t.uid, t.manager, avatarUrl(t.user?.avatar));
@@ -58,6 +66,10 @@ export const managers: TableDef = {
         const s = t.roster.settings || {}; a.official.w += s.wins || 0; a.official.l += s.losses || 0; a.official.t += s.ties || 0; a.moves += s.total_moves || 0;
         if (tx) { a.tx ??= { trades: 0, waivers: 0, fa: 0, faab: 0, bid: 0 }; const x = tx[t.rid]; if (x) { a.tx.trades += x.trades; a.tx.waivers += x.waivers; a.tx.fa += x.freeAgents; a.tx.faab += x.faab; a.tx.bid = Math.max(a.tx.bid, x.biggestBid); } }
         if (dr) { a.dr ??= { picks: 0, auction: 0, keepers: 0 }; const x = dr[t.rid]; if (x) { a.dr.picks += x.picks; a.dr.auction += x.auction; a.dr.keepers += x.keepers; } }
+        const la = lagg.get(`${m.sid}:${t.rid}`);
+        if (la) { a.lu ??= { actual: 0, optimal: 0, left: 0, lost: 0 }; a.lu.actual += la.actual; a.lu.optimal += la.optimal; a.lu.left += la.left; a.lu.lost += la.lostToLineup; }
+        const so = sos[t.rid];
+        if (so.oppPpgAvg != null) { a.sos.p += so.oppPpgAvg * so.n; a.sos.d += (so.oppVsAvg ?? 0) * so.n; a.sos.n += so.n; }
         for (const co of t.coOwners) { const c = get(co.user_id, co.display_name, avatarUrl(co.avatar)); c.coSeasons.push(m.season); }
       }
       // streaks carried across seasons, regular + playoff games in order
@@ -77,6 +89,7 @@ export const managers: TableDef = {
     const current = new Set(latest ? Object.values(latest.teams).map(t => t.uid) : []);
     return Object.values(agg).sort((a, b) => b.seasons.length - a.seasons.length || b.titles - a.titles || a.name.localeCompare(b.name)).map(a => {
       const seasons = [...new Set(a.seasons)].sort();
+      const pk = pagg.get(a.uid) ?? null;
       return {
         user_id: a.uid, display_name: a.name, avatar_url: a.avatar, is_current_member: current.has(a.uid), is_commissioner_now: !!latest && Object.values(latest.teams).some(t => t.uid === a.uid && t.isCommish), commissioner_seasons: a.commish,
         seasons_played: seasons.length, first_season: seasons[0] ?? null, last_season: seasons[seasons.length - 1] ?? null, seasons_list: seasons.join(","), seasons_as_co_owner: new Set(a.coSeasons).size,
@@ -93,6 +106,10 @@ export const managers: TableDef = {
         best_finish: a.finishes.length ? Math.min(...a.finishes) : null, worst_finish: a.finishes.length ? Math.max(...a.finishes) : null, avg_finish: a.finishes.length ? r2(a.finishes.reduce((x, y) => x + y, 0) / a.finishes.length) : null,
         total_moves: a.moves, trades: a.tx?.trades ?? null, waiver_moves: a.tx?.waivers ?? null, free_agent_adds: a.tx?.fa ?? null, faab_spent: a.tx?.faab ?? null, biggest_faab_bid: a.tx?.bid ?? null,
         draft_picks_made: a.dr?.picks ?? null, auction_dollars_spent: a.dr?.auction ?? null, keepers_used: a.dr?.keepers ?? null,
+        efficiency_pct: a.lu && a.lu.optimal ? r2(a.lu.actual / a.lu.optimal * 100) : null, points_left_on_bench: a.lu ? r2(a.lu.left) : null, games_lost_to_lineup: a.lu ? a.lu.lost : null,
+        opp_season_ppg_avg: a.sos.n ? r2(a.sos.p / a.sos.n) : null, opp_pts_vs_their_avg: a.sos.n ? r2(a.sos.d / a.sos.n) : null,
+        pickup_starter_points: pk ? r2(pk.starterPts) : null, faab_points_per_dollar: pk && pk.bids ? r2(pk.starterPts / pk.bids) : null,
+        best_pickup: pk?.best?.name ?? null, best_pickup_points: pk?.best?.pts ?? null,
       } as Row;
     });
   },
@@ -102,5 +119,6 @@ export const managers: TableDef = {
     { name: "Titles and finishes", config: view({ plugin: "Y Bar", group_by: ["display_name"], columns: ["titles", "runner_ups", "third_places", "last_places"], aggregates: { titles: "sum", runner_ups: "sum", third_places: "sum", last_places: "sum" }, sort: [["titles", "desc"]] }) },
     { name: "Luck vs win percentage", config: view({ plugin: "X/Y Scatter", group_by: ["display_name"], columns: ["all_play_pct", "reg_win_pct", null, null, "display_name"], aggregates: { all_play_pct: "any", reg_win_pct: "any", display_name: "any" } }) },
     { name: "Tenure", config: view({ columns: ["display_name", "is_current_member", "first_season", "last_season", "seasons_played", "seasons_list", "seasons_as_co_owner", "commissioner_seasons"], sort: [["first_season", "asc"]] }) },
+    { name: "Lineups, schedule and waivers", config: view({ columns: ["display_name", "efficiency_pct", "points_left_on_bench", "games_lost_to_lineup", "opp_season_ppg_avg", "opp_pts_vs_their_avg", "faab_spent", "pickup_starter_points", "faab_points_per_dollar", "best_pickup", "best_pickup_points"], sort: [["efficiency_pct", "desc"]] }) },
   ],
 };
