@@ -1,0 +1,47 @@
+/* Styles for the shared prototype pieces: switcher, data grid, drill sheet, popovers, cmdk pickers */
+.seg { display: inline-flex; align-items: center; gap: 2px; background: var(--code-bg); border-radius: 999px; padding: 3px; }
+.seg .hint { padding: 0 10px 0 8px; font-size: .8rem; }
+.seg button { background: none; border: 0; border-radius: 999px; padding: 5px 12px; font-weight: 600; color: var(--muted); cursor: pointer; }
+.seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .15); }
+
+.dg { display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); }
+.dg-tools { display: flex; gap: 8px; padding: 6px 8px; border-bottom: 1px solid var(--line); position: relative; }
+.dg-chooser { position: absolute; top: 100%; left: 8px; z-index: 20; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 2px 14px; max-height: 50vh; overflow: auto; min-width: 320px; box-shadow: 0 8px 24px rgb(0 0 0 / .15); font-size: .88rem; }
+.dg-scroll { overflow: auto; flex: 1 1 auto; min-height: 0; }
+.dg-table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: .9rem; font-variant-numeric: tabular-nums; }
+.dg-table th { position: sticky; top: 0; z-index: 2; background: var(--code-bg); font: 600 .7rem/1 var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; cursor: pointer; user-select: none; }
+.dg-table td { padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
+.dg-table th.num, .dg-table td.num { text-align: right; }
+.dg-table.pin th:first-child, .dg-table.pin td:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); }
+.dg-table.pin th:first-child { z-index: 3; background: var(--code-bg); }
+.dg-table tr.click { cursor: pointer; }
+.dg-table tr.click:hover td { background: var(--raised); }
+.dg-empty { color: var(--muted); text-align: center; padding: 24px !important; }
+.dg-bar { display: inline-grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; width: 100%; min-width: 120px; }
+.dg-bar i { display: block; height: 8px; border-radius: 4px; background: var(--turf); opacity: .75; justify-self: start; }
+.dg-bar b { font-weight: 500; }
+
+.sheet-backdrop { position: fixed; inset: 0; background: rgb(0 0 0 / .35); z-index: 40; display: flex; align-items: flex-end; }
+.sheet { width: 100%; max-height: 70vh; background: var(--bg); border-top: 1px solid var(--line); border-radius: 14px 14px 0 0; display: flex; flex-direction: column; box-shadow: 0 -8px 30px rgb(0 0 0 / .25); }
+.sheet > header { padding: 12px 18px; border-bottom: 1px solid var(--line); }
+.sheet-body { flex: 1 1 auto; min-height: 0; padding: 10px 18px 18px; display: flex; }
+.sheet-body > .dg { flex: 1 1 auto; }
+
+.pop-anchor { position: relative; display: inline-block; }
+.pop { position: absolute; top: calc(100% + 4px); left: 0; z-index: 30; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 30px rgb(0 0 0 / .2); min-width: 300px; max-width: min(92vw, 460px); }
+.pop.right { left: auto; right: 0; }
+
+.cmd { display: flex; flex-direction: column; max-height: 60vh; }
+.cmd-input { width: 100%; border: 0; border-bottom: 1px solid var(--line); background: transparent; padding: 10px 12px; font: inherit; color: inherit; outline: none; }
+.cmd-list { overflow: auto; padding: 6px; }
+.cmd-group [cmdk-group-heading] { font: 600 .68rem/1 var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 8px 8px 4px; }
+.cmd-item { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: .92rem; }
+.cmd-item[data-selected="true"], .cmd-item:hover { background: var(--code-bg); }
+.cmd-item .hint { font-size: .8rem; }
+.cmd-empty { padding: 14px; color: var(--muted); font-size: .9rem; }
+
+.chip-btn { display: inline-flex; align-items: center; gap: 6px; background: var(--turf-soft); color: var(--turf); border: 1px solid transparent; border-radius: 8px; padding: 4px 10px; font-weight: 600; cursor: pointer; }
+.chip-btn:hover { border-color: var(--turf); }
+.chip-btn .x { opacity: .6; font-weight: 400; }
+.chip-btn .x:hover { opacity: 1; }
+.chip-btn.muted { background: var(--code-bg); color: var(--muted); }

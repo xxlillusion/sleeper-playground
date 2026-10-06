@@ -1,4 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { UiSwitcher } from "./ui/switcher";
+import { readUi, writeUi, type UiName } from "./view/url";
+
+const PROTOTYPES = { ask: lazy(() => import("./ui/ask")), site: lazy(() => import("./ui/site")), sheet: lazy(() => import("./ui/sheet")) };
 import type { Table } from "@perspective-dev/client";
 import type { HTMLPerspectiveViewerElement, ViewerConfig, ViewerConfigUpdate } from "@perspective-dev/viewer";
 import { cacheClear } from "./api/cache";
@@ -34,6 +38,8 @@ export function App() {
   const [view, setView] = useState<{ table: Table; name: string; datasetId: string; config: ViewerConfigUpdate } | null>(null);
   const [requests, setRequests] = useState({ network: 0, cached: 0 });
   const [schemaOpen, setSchemaOpen] = useState(false);
+  const [ui, setUi] = useState<UiName>(readUi);
+  const switchUi = (u: UiName) => { writeUi(u); setUi(u); };
   const viewer = useRef<HTMLPerspectiveViewerElement | null>(null);
   const loadToken = useRef(0);
 
@@ -160,22 +166,30 @@ export function App() {
           <p className="hint">Try it: <a href={`?id=${EXAMPLE}`} onClick={e => { e.preventDefault(); go(EXAMPLE); }}>{EXAMPLE}</a>. Where do I find my league id? Open the league in Sleeper's web app; it is the long number in the address bar. The <a href="/">explorer</a> also shows it once you pick a league.</p>
         </section>
       )}
-      {ds && (
+      {ds && <div className="bar"><UiSwitcher value={ui} onChange={switchUi} /></div>}
+      {ds && ui === "classic" && (
         <>
           <DatasetTabs tables={TABLES} selected={def.id} counts={counts} pending={pending} onSelect={setDatasetId} />
           <Toolbar def={def} rows={counts[def.id] ?? 0} onPreset={applyPreset} onReset={resetView} onExport={exportIt} onSchema={() => setSchemaOpen(true)} />
         </>
       )}
-      <div className="viewer" hidden={!ds}>
-        <PerspectiveView tableName={view?.name ?? null} config={view?.config ?? null} theme={theme} onConfigChange={onConfigChange} onReady={el => { viewer.current = el; }} />
-      </div>
+      {ui === "classic" && (
+        <div className="viewer" hidden={!ds}>
+          <PerspectiveView tableName={view?.name ?? null} config={view?.config ?? null} theme={theme} onConfigChange={onConfigChange} onReady={el => { viewer.current = el; }} />
+        </div>
+      )}
+      {ds && ui !== "classic" && (() => { const Proto = PROTOTYPES[ui]; return (
+        <Suspense fallback={<div className="bar"><span className="hint"><span className="spin" />Loading the {ui} prototype…</span></div>}>
+          <Proto ds={ds} rowsById={rowsById} counts={counts} pending={pending} theme={theme} />
+        </Suspense>
+      ); })()}
       {ds && ds.warnings.length > 0 && (
         <details className="warn">
           <summary>{ds.warnings.length} request{ds.warnings.length === 1 ? "" : "s"} failed and {ds.warnings.length === 1 ? "was" : "were"} skipped</summary>
           <ul>{ds.warnings.map((w, i) => <li key={i}><span className="mono">{w.endpoint}</span>: {w.message}</li>)}</ul>
         </details>
       )}
-      {ds && (
+      {ds && ui === "classic" && (
         <p className="foot hint">
           Managers are matched by Sleeper account, so a renamed team stays one person. Sleeper only reports who owned each roster at season's end. Wins and losses in Games are worked out from final scores, so they can differ by a game from Sleeper's own standings (shown in Teams) when a score was corrected after the week closed, or in leagues with a median game. Past seasons are cached in this browser; the current season is refetched on every load.
         </p>
