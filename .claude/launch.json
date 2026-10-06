@@ -6,6 +6,12 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8765", "--directory", "explorer"],
       "port": 8765
+    },
+    {
+      "name": "league-data",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "league", "run", "dev"],
+      "port": 5173
     }
   ]
 }

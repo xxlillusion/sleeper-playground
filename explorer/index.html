@@ -327,7 +327,7 @@ pre.json { margin: 0; padding: 14px 16px; overflow: auto; font: 400 .8rem/1.5 va
     <section class="step" id="s-league" hidden>
       <div class="step-head">
         <div><span class="num">Steps 4–8</span><h2 id="leagueTitle">League</h2></div>
-        <span class="ep" id="leagueEp"></span>
+        <span class="row"><a class="btn ghost" id="leagueDataLink" href="/league/" title="Every season of this league as pivot tables and charts">Open league data →</a><span class="ep" id="leagueEp"></span></span>
       </div>
       <div id="leagueOverview"></div>
       <div class="tabs" role="tablist" id="tabs">
@@ -598,6 +598,7 @@ async function openLeague(lg, scroll = true) {
   const sec = $("#s-league"); sec.hidden = false;
   $("#leagueTitle").textContent = `${lg.name} · ${lg.season}`;
   $("#leagueEp").innerHTML = `<b>GET</b> /league/${esc(lg.league_id)}`;
+  $("#leagueDataLink").href = `/league/?id=${encodeURIComponent(lg.league_id)}`;
   const curSeason = S.nfl && String(lg.season) === String(S.nfl.season);
   S.week = curSeason ? Math.max(1, Math.min(18, S.nfl.display_week || S.nfl.week || 1)) : 1;
   loading($("#leagueOverview"), "Loading league");

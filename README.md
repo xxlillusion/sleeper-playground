@@ -1,9 +1,37 @@
 # Sleeper Playground
 
-A browser-based explorer for the [Sleeper](https://sleeper.com) fantasy football API, plus an API guide.
+A browser-based explorer for the [Sleeper](https://sleeper.com) fantasy football API, plus an API guide and a pivot-table page for a league's full history.
 
-- `/` — League Explorer (`explorer/`)
+- `/` — League Explorer (`explorer/`): the guided walk from username to league, with curated tabs. Plain HTML and JS, no build.
 - `/guide.html` — Sleeper API guide
+- `/league/?id=<league_id>` — League Data (`league/`): every season of one league, loaded by league id, as flat tables you can group, filter, chart and export. React + Vite + TypeScript with [Perspective](https://github.com/perspective-dev/perspective) for the pivots and charts.
+
+Both pages call `api.sleeper.app` straight from the browser and share one IndexedDB cache of finished seasons, so a season loaded on either page is instant on the other.
+
+## League Data
+
+Datasets, one tab each: **Teams** (standings per season with luck, all-play, strength of schedule, lineup efficiency and final rank), **Games**, **Weekly scores**, **Lineups** (the lineup each team started against the best one its roster allowed, with points left on the bench and games that lineup calls cost), **Head-to-head** (every manager against every opponent, both directions, so it pivots straight into a matrix), **Managers** (all-time per Sleeper account), **Seasons**, **Player weeks** (starters and bench with points), **Transactions**, **Trades** (each side of every trade graded by what the players went on to score for their new teams), **Pickups** (every waiver claim and free-agent add with the FAAB paid, competing bids and the points that followed), **Draft picks**, **Brackets** and **Scoring rules**. Every table carries `season`, `manager` and `team` on each row so pivots never need joins. The "Quick view" menu has starter pivots and charts for each dataset; anything you build is remembered per league and dataset in your browser. Export gives CSV or JSON of the current view or the whole dataset.
+
+If the history looks short, the commissioner probably created a new league one year instead of renewing. Open **Options** and add that older season's league id to stitch it on.
+
+### Three UI prototypes
+
+The **Prototype** switch under the season chips (also `?ui=classic|ask|site|sheet`) swaps the whole interface while keeping the data. All three share one view description (`league/src/view/spec.ts`: dataset, rows, columns, measures, filters, sort, chart), so a view built in one can be opened in another through the `?v=` link, and every ready-made view is available in all of them.
+
+- **Classic**: today's tabs with Perspective's own controls.
+- **Ask** (`ui/ask`): a sentence, "from Teams show Total points for each Manager across Season where … sorted by …", whose chips open searchable pickers. Below it an answer card with a headline, an auto-chosen Observable Plot chart, and the result grid. Questions palette on Cmd/Ctrl-K, custom metric formulas, drill-through from any bar or cell.
+- **Stat site** (`ui/site`): a fantasy stat site by subject: KPI tiles, leaderboards with inline bars, percentile sliders, a record book, ECharts bump chart and heatmaps. Clicking any name adds a filter chip for the whole page. "Pivot this" on any section opens a Rows / Columns / Values / Filters sheet with live results.
+- **Sheet** (`ui/sheet`): Perspective stays the grid and chart engine, but a Numbers-style Organize panel drives it: tick fields to add them, Add buttons per section, formula columns validated by Perspective, saved views as pinned tabs.
+
+The pivot engine behind Ask and Stat site is plain TypeScript (`league/src/view/engine.ts`, tested with `npm test`); Sheet keeps Perspective's WebAssembly engine.
+
+## Develop
+
+```bash
+cd league && npm install && npm run dev
+```
+
+Then open `http://localhost:5173/league/?id=<league_id>`. The explorer needs no tooling: serve the `explorer/` folder with any static server, for example `python3 -m http.server 8765 --directory explorer`.
 
 ## Run with Docker
 
@@ -11,7 +39,7 @@ A browser-based explorer for the [Sleeper](https://sleeper.com) fantasy football
 docker compose up -d --build
 ```
 
-The site is served on port 8080 by default. Pick another host port with `HOST_PORT`:
+The image builds the league page itself (Node runs inside the build stage), so the host only needs Docker. The site is served on port 8080 by default. Pick another host port with `HOST_PORT`:
 
 ```bash
 HOST_PORT=8090 docker compose up -d --build
@@ -27,4 +55,4 @@ docker compose up -d --build
 
 To update later: `git pull && docker compose up -d --build`.
 
-To ship an update: push to `main`, then on the VPS run `git pull` and the compose command again.
+To ship an update: push to `main`, then on the VPS run `git pull` and the compose command again. The Vite build in the image needs roughly 1 GB of memory; on a very small VPS build the image elsewhere and push it instead.

@@ -1,0 +1,41 @@
+/* Shared with explorer/index.html so both pages read as one site */
+:root {
+  --bg: #f6f7f4; --surface: #ffffff; --raised: #fbfcfa; --ink: #1b221d; --muted: #5b665e; --line: #dde2db;
+  --turf: #1f6b45; --turf-soft: #e3efe7; --code-bg: #eef1ec; --chalk: #b7791f;
+  --good: #1f7a4a; --bad: #b43d32; --warn: #a86a12;
+  --chart-1: #1f6b45; --chart-2: #2a6fb5; --chart-3: #c47a12; --chart-4: #c0392b; --chart-5: #7a5bb5;
+  --chart-6: #1f8a5b; --chart-7: #b7791f; --chart-8: #5d6b74; --chart-9: #a03f8a; --chart-10: #3f8fa0;
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Source Sans 3", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121714; --surface: #19201b; --raised: #1e2620; --ink: #e6ebe5; --muted: #9aa69d; --line: #2c362f;
+    --turf: #5fc08b; --turf-soft: #1d3326; --code-bg: #0e1310; --chalk: #e0aa55;
+    --good: #5fc08b; --bad: #ec7b6f; --warn: #e0aa55;
+    --chart-1: #5fc08b; --chart-2: #6fa8e6; --chart-3: #e0aa55; --chart-4: #ec7b6f; --chart-5: #b39be6;
+    --chart-6: #7fd4a8; --chart-7: #f0c070; --chart-8: #9aa9b2; --chart-9: #e08ad0; --chart-10: #6cc5d6;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121714; --surface: #19201b; --raised: #1e2620; --ink: #e6ebe5; --muted: #9aa69d; --line: #2c362f;
+  --turf: #5fc08b; --turf-soft: #1d3326; --code-bg: #0e1310; --chalk: #e0aa55;
+  --good: #5fc08b; --bad: #ec7b6f; --warn: #e0aa55;
+  --chart-1: #5fc08b; --chart-2: #6fa8e6; --chart-3: #e0aa55; --chart-4: #ec7b6f; --chart-5: #b39be6;
+  --chart-6: #7fd4a8; --chart-7: #f0c070; --chart-8: #9aa9b2; --chart-9: #e08ad0; --chart-10: #6cc5d6;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 400 1rem/1.5 var(--font-body); }
+h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.1; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(1.6rem, 4vw, 2.2rem); }
+h2 { font-size: 1.4rem; }
+h3 { font-size: 1.15rem; }
+p { margin: 0; }
+button, input, select { font: inherit; color: inherit; }
+code, .mono { font-family: var(--font-mono); font-size: .85em; }
+:focus-visible { outline: 2px solid var(--turf); outline-offset: 2px; }
