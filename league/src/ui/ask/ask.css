@@ -1,0 +1,90 @@
+/* Prototype A: Ask the League */
+.ask { display: grid; gap: 22px; padding: 22px clamp(14px, 3vw, 36px) 48px; max-width: 1180px; width: 100%; margin: 0 auto; }
+.ask-top { display: grid; gap: 16px; }
+
+.ask-bar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.ask-bar-group { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.ask-bar kbd { font: 500 .7rem/1 var(--font-mono); opacity: .7; margin-left: 4px; padding: 2px 4px; border-radius: 4px; background: rgb(255 255 255 / .18); }
+.ask-bar .btn.ghost.on { background: var(--turf-soft); border-color: var(--turf); }
+.ask-bar .pop { max-width: min(92vw, 520px); min-width: min(92vw, 420px); }
+
+/* The sentence reads like prose; the chips are the only coloured things in it */
+.ask-sentence { font: 600 clamp(1.35rem, 2.6vw, 1.9rem)/1.75 var(--font-display); letter-spacing: .005em; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; color: var(--ink); }
+.ask-sentence .w { color: var(--muted); font-weight: 600; }
+.ask-sentence .chip-btn { font: 600 .62em/1.2 var(--font-body); padding: 7px 12px; border-radius: 10px; gap: 8px; max-width: min(70vw, 420px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: inline-flex; }
+.ask-sentence .chip-btn.muted { border: 1px dashed var(--line); background: transparent; }
+.ask-sentence .chip-btn.muted:hover { border-color: var(--turf); color: var(--turf); }
+.ask-sentence .chip-btn .x { font-size: 1.1em; line-height: 1; padding: 0 2px; margin-right: -4px; }
+.ask-sentence .pop { font: 400 1rem/1.4 var(--font-body); letter-spacing: 0; }
+
+/* Popover menus */
+.ask-menu { display: grid; gap: 2px; padding: 6px; min-width: 240px; }
+.ask-menu.slim { padding: 6px 6px 0; }
+.ask-menu-h { font: 600 .68rem/1 var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 8px 8px 4px; }
+.ask-menu > button { display: flex; justify-content: space-between; gap: 12px; background: none; border: 0; text-align: left; padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: .92rem; color: var(--ink); }
+.ask-menu > button:hover { background: var(--code-bg); }
+.ask-menu > button.on { background: var(--turf-soft); color: var(--turf); }
+.ask-menu > button.danger, .linkbtn.danger { color: var(--bad); }
+.ask-seg { display: flex; gap: 4px; padding: 4px 6px; }
+.ask-seg.wrap { flex-wrap: wrap; }
+.ask-seg button { background: var(--code-bg); border: 1px solid transparent; border-radius: 999px; padding: 4px 10px; font-size: .85rem; font-weight: 600; color: var(--muted); cursor: pointer; }
+.ask-seg button.on { background: var(--turf-soft); color: var(--turf); border-color: var(--turf); }
+.ask-filter { display: grid; gap: 4px; padding-bottom: 6px; min-width: 300px; }
+.ask-filter .cmd-item.on { color: var(--turf); font-weight: 600; }
+.ask-input { margin: 4px 10px 6px; background: var(--raised); border: 1px solid var(--line); border-radius: 8px; padding: 8px 11px; }
+
+/* Suggested questions */
+.ask-suggest { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.ask-suggest button { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-weight: 600; font-size: .9rem; color: var(--ink); cursor: pointer; }
+.ask-suggest button:hover { border-color: var(--turf); color: var(--turf); }
+
+/* Custom metric and JSON */
+.ask-metric { display: grid; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; max-width: 720px; }
+.ask-metric label { display: grid; gap: 4px; font-weight: 600; font-size: .85rem; color: var(--muted); }
+.ask-metric input[type=text], .ask-metric textarea, .ask-json textarea { background: var(--raised); border: 1px solid var(--line); border-radius: 8px; padding: 8px 11px; font: inherit; color: inherit; max-width: none; width: 100%; }
+.ask-metric textarea, .ask-json textarea { font-family: var(--font-mono); font-size: .88rem; resize: vertical; }
+.ask-cols { display: flex; flex-wrap: wrap; gap: 4px; max-height: 96px; overflow: auto; }
+.ask-cols .chip-btn { font: 500 .72rem/1 var(--font-mono); padding: 4px 7px; }
+.hint.bad { color: var(--bad); } .hint.good { color: var(--good); }
+.ask-json { display: grid; gap: 6px; }
+
+/* Answer card */
+.ask-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px clamp(14px, 2.4vw, 26px) 18px; display: grid; gap: 16px; min-width: 0; box-shadow: 0 1px 2px rgb(0 0 0 / .04); }
+.ask-card-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 10px 16px; }
+.ask-card-title { display: grid; gap: 4px; min-width: 0; }
+.ask-card-title h2 { font-size: clamp(1.1rem, 1.8vw, 1.35rem); font-weight: 600; color: var(--muted); }
+.ask-card-title h2::first-letter { text-transform: uppercase; }
+.ask-card-tools .btn.on { background: var(--turf-soft); }
+.ask-headline { display: flex; align-items: center; gap: 16px; }
+.ask-avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid var(--line); background: var(--code-bg); }
+.ask-head-label { font: 600 1rem/1.2 var(--font-body); color: var(--ink); }
+.ask-head-value { font: 700 clamp(2.2rem, 5vw, 3.4rem)/1.05 var(--font-display); color: var(--ink); letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.ask-head-unit { font-size: .42em; font-weight: 600; color: var(--turf); letter-spacing: .02em; }
+.ask-empty { color: var(--muted); padding: 24px 0; font-size: 1.05rem; }
+.ask-strip { display: inline-flex; flex-wrap: wrap; gap: 2px; background: var(--code-bg); border-radius: 999px; padding: 3px; justify-self: start; }
+.ask-strip button { background: none; border: 0; border-radius: 999px; padding: 5px 12px; font-weight: 600; font-size: .85rem; color: var(--muted); cursor: pointer; }
+.ask-strip button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .15); }
+.ask-strip button[disabled] { opacity: .35; cursor: default; }
+.ask-chart { width: 100%; min-height: 120px; overflow-x: auto; }
+.ask-chart svg { display: block; max-width: 100%; }
+.ask-chart [aria-label="tip"] { font-family: var(--font-body); }
+.ask-chart figure { margin: 0; }
+.ask-chart svg[class^="plot"] { cursor: crosshair; }
+.ask-card .dg { border-radius: 10px; }
+.ask-card .dg td { cursor: pointer; }
+.ask-card .dg td:hover { background: var(--raised); }
+.ask-person { display: inline-flex; align-items: center; gap: 7px; }
+.ask-person img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; background: var(--code-bg); }
+.ask-foot { font-size: .82rem; }
+
+/* Phones: chips wrap, popovers become a bottom panel, the card stacks */
+@media (max-width: 640px) {
+  .ask { padding: 14px 16px 40px; gap: 16px; }
+  .ask-sentence { font-size: 1.25rem; line-height: 1.6; gap: 6px 8px; }
+  .ask-sentence .chip-btn { max-width: calc(100vw - 48px); }
+  .ask .pop { position: fixed; left: 8px; right: 8px; top: auto; bottom: 8px; width: auto; max-width: none; min-width: 0; max-height: 70vh; overflow: auto; }
+  .ask-headline { gap: 12px; }
+  .ask-avatar { width: 44px; height: 44px; }
+  .ask-card { padding: 16px 14px; border-radius: 12px; }
+  .ask-bar kbd { display: none; }
+}
