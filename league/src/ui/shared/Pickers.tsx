@@ -1,6 +1,6 @@
 /* Searchable pickers built on cmdk: columns of a dataset (grouped by kind), datasets, and ready-made views. */
 import { Command } from "cmdk";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { allDatasets, datasetInfo, type ColKind, type ColumnInfo } from "../../view/catalog";
 import type { PresetView } from "../../view/presets";
 
@@ -11,6 +11,14 @@ interface PopoverProps { open: boolean; onClose: () => void; children: React.Rea
 /** A small floating panel that closes on outside click or Escape. Position it with CSS relative to a wrapper with class "pop-anchor". */
 export function Popover({ open, onClose, children, anchorClass }: PopoverProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const [flip, setFlip] = useState(false);
+  // Flip to the right edge of the anchor when the panel would run off the viewport
+  useEffect(() => {
+    if (!open) { setFlip(false); return; }
+    const el = ref.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    if (r.right > innerWidth - 8) setFlip(true);
+  }, [open]);
   useEffect(() => {
     if (!open) return;
     const click = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) onClose(); };
@@ -19,7 +27,7 @@ export function Popover({ open, onClose, children, anchorClass }: PopoverProps) 
     return () => { document.removeEventListener("mousedown", click); document.removeEventListener("keydown", key); };
   }, [open, onClose]);
   if (!open) return null;
-  return <div className={`pop ${anchorClass ?? ""}`} ref={ref}>{children}</div>;
+  return <div className={`pop ${flip ? "right" : ""} ${anchorClass ?? ""}`} ref={ref}>{children}</div>;
 }
 
 export interface ColumnPickerProps {

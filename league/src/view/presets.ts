@@ -34,7 +34,7 @@ let cached: PresetView[] | null = null;
 export function allPresets(): PresetView[] {
   if (cached) return cached;
   const fromTables = TABLES.flatMap(t => t.presets.map((p, i) => ({ id: `${t.id}-${i}`, name: p.name, dataset: t.id, group: t.label, spec: fromPerspective(t.id, p.config, t.schema) })));
-  return (cached = [...QUESTIONS, ...fromTables]);
+  return (cached = [...QUESTIONS.map(q => ({ ...q, spec: { ...q.spec, title: q.spec.title ?? q.name } })), ...fromTables]);
 }
 export const presetsFor = (dataset: string) => allPresets().filter(p => p.dataset === dataset);
 export const defaultSpecFor = (dataset: string): ViewSpec => { const t = TABLES.find(x => x.id === dataset)!; return fromPerspective(dataset, t.defaultView, t.schema); };

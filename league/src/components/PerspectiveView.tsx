@@ -12,14 +12,17 @@ interface Props {
   theme: ThemeName;
   onConfigChange?: (c: ViewerConfig) => void;
   onReady?: (el: HTMLPerspectiveViewerElement) => void;
+  /** Called when a restore fails (bad column, bad expression) before the fallback to the table's defaults */
+  onError?: (e: unknown) => void;
 }
 
 // The element is registered only once Perspective's WASM has initialised, so every method call waits for the upgrade.
 const defined = () => customElements.whenDefined("perspective-viewer");
 
-export function PerspectiveView({ tableName, config, theme, onConfigChange, onReady }: Props) {
+export function PerspectiveView({ tableName, config, theme, onConfigChange, onReady, onError }: Props) {
   const ref = useRef<HTMLPerspectiveViewerElement>(null);
   const cbRef = useRef(onConfigChange); cbRef.current = onConfigChange;
+  const errRef = useRef(onError); errRef.current = onError;
   const loaded = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
@@ -55,6 +58,7 @@ export function PerspectiveView({ tableName, config, theme, onConfigChange, onRe
       if (!live) return;
       try { await el.restore({ ...config, table: tableName, theme }, { suppress_errors: true }); }
       catch (e) {
+        errRef.current?.(e);
         console.warn("restore failed, falling back to the table's defaults", e);
         await el.restore({ table: tableName, theme }).catch(() => {});
         await el.reset(true).catch(() => {});

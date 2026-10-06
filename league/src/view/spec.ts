@@ -39,6 +39,8 @@ export interface ViewSpec {
   title?: string;
   /** For raw (un-pivoted) views: which columns to show. Ignored when rows, columns or measures are set. */
   display?: string[];
+  /** Perspective expression columns, name -> expression (column names double-quoted). Used by engines that support them. */
+  expressions?: Record<string, string>;
 }
 
 export const emptySpec = (dataset: string): ViewSpec => ({ dataset, rows: [], columns: [], measures: [], filters: [], sort: [], chart: "table" });

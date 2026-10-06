@@ -8,6 +8,7 @@
 .dg-tools { display: flex; gap: 8px; padding: 6px 8px; border-bottom: 1px solid var(--line); position: relative; }
 .dg-chooser { position: absolute; top: 100%; left: 8px; z-index: 20; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 2px 14px; max-height: 50vh; overflow: auto; min-width: 320px; box-shadow: 0 8px 24px rgb(0 0 0 / .15); font-size: .88rem; }
 .dg-scroll { overflow: auto; flex: 1 1 auto; min-height: 0; }
+.dg.auto .dg-scroll { flex: 0 1 auto; }
 .dg-table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: .9rem; font-variant-numeric: tabular-nums; }
 .dg-table th { position: sticky; top: 0; z-index: 2; background: var(--code-bg); font: 600 .7rem/1 var(--font-body); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; cursor: pointer; user-select: none; }
 .dg-table td { padding: 6px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; max-width: 320px; overflow: hidden; text-overflow: ellipsis; }

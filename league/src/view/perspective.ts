@@ -26,10 +26,12 @@ export function fromPerspective(dataset: string, cfg: ViewerConfigUpdate, schema
     const m = measures.find(x => x.col === col);
     return [{ key: m ? m.id : col, dir: d as "asc" | "desc" }];
   });
-  return { dataset, rows, columns, measures, filters, sort, chart: PLUGIN_TO_CHART[cfg.plugin ?? "Datagrid"] ?? "table", title: cfg.title ?? undefined, display: pivoted ? undefined : cols };
+  const exprs = Object.fromEntries(Object.entries(cfg.expressions ?? {}).filter((e): e is [string, string] => typeof e[1] === "string"));
+  return { dataset, rows, columns, measures, filters, sort, chart: PLUGIN_TO_CHART[cfg.plugin ?? "Datagrid"] ?? "table", title: cfg.title ?? undefined, display: pivoted ? undefined : cols, expressions: Object.keys(exprs).length ? exprs : undefined };
 }
 
-export function toPerspective(spec: ViewSpec, allColumns: string[]): ViewerConfigUpdate {
+/** `keep` carries per-column styling (widths, gradients) and plugin settings from a previous save() so a re-restore does not drop them. */
+export function toPerspective(spec: ViewSpec, allColumns: string[], keep?: Pick<ViewerConfigUpdate, "plugin_config" | "columns_config">): ViewerConfigUpdate {
   const pivoted = spec.rows.length > 0 || spec.columns.length > 0 || spec.measures.length > 0;
   const measures = spec.measures.filter(m => m.col);
   const columns = pivoted ? measures.map(m => m.col!) : (spec.display?.length ? spec.display : allColumns);
@@ -37,6 +39,6 @@ export function toPerspective(spec: ViewSpec, allColumns: string[]): ViewerConfi
   const sort = spec.sort.map(s => { const m = spec.measures.find(x => x.id === s.key); return [m?.col ?? s.key, s.dir] as [string, "asc" | "desc"]; });
   return {
     plugin: CHART_TO_PLUGIN[spec.chart] ?? "Datagrid", group_by: spec.rows, split_by: spec.columns, columns, aggregates, filter: spec.filters.map(f => [f.col, f.op, f.value ?? null]) as unknown as ViewerConfigUpdate["filter"],
-    sort: sort as unknown as ViewerConfigUpdate["sort"], expressions: {}, plugin_config: {}, columns_config: {}, title: spec.title ?? null,
+    sort: sort as unknown as ViewerConfigUpdate["sort"], expressions: spec.expressions ?? {}, plugin_config: keep?.plugin_config ?? {}, columns_config: keep?.columns_config ?? {}, title: spec.title ?? null,
   };
 }

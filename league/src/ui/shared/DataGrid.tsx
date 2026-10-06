@@ -15,6 +15,7 @@ export interface DataGridProps {
   bars?: string[];
   /** Columns whose cells get a colour scale from min to max (numeric); negative-to-positive uses a diverging scale */
   heat?: string[];
+  /** Pixel/CSS height, or "auto" to size to the rows (no virtualization window; fine up to a few hundred rows) */
   height?: number | string;
   /** Default sort */
   sort?: { key: string; dir: "asc" | "desc" }[];
@@ -49,8 +50,12 @@ export function DataGrid(p: DataGridProps) {
     return out;
   }, [p.rows, p.bars, p.heat]);
 
-  const [sorting, setSorting] = useState<SortingState>(() => (p.sort ?? []).map(s => ({ id: s.key, desc: s.dir === "desc" })));
-  useEffect(() => { setSorting((p.sort ?? []).map(s => ({ id: s.key, desc: s.dir === "desc" }))); }, [p.sort]);
+  // Only sorts on columns that exist survive, so a stale sort from a previous dataset never reaches TanStack
+  const validSort = useMemo(() => (p.sort ?? []).filter(s => cols.includes(s.key)).map(s => ({ id: s.key, desc: s.dir === "desc" })), [p.sort, cols]);
+  const [sorting, setSortingState] = useState<SortingState>(validSort);
+  useEffect(() => { setSortingState(validSort); }, [validSort]);
+  const sortingSafe = useMemo(() => sorting.filter(s => cols.includes(s.id)), [sorting, cols]);
+  const setSorting = setSortingState;
 
   const columnDefs = useMemo<ColumnDef<Row>[]>(() => cols.map(c => ({
     id: c, accessorFn: r => r[c], header: p.labels?.[c] ?? c, sortUndefined: "last",
@@ -58,8 +63,8 @@ export function DataGrid(p: DataGridProps) {
   })), [cols, p.labels]);
 
   const table = useReactTable({
-    data: p.rows, columns: columnDefs, state: { sorting }, getCoreRowModel: getCoreRowModel(), getSortedRowModel: getSortedRowModel(),
-    onSortingChange: u => { const next = typeof u === "function" ? u(sorting) : u; setSorting(next); p.onSortChange?.(next.map(s => ({ key: s.id, dir: s.desc ? "desc" : "asc" }))); },
+    data: p.rows, columns: columnDefs, state: { sorting: sortingSafe }, getCoreRowModel: getCoreRowModel(), getSortedRowModel: getSortedRowModel(),
+    onSortingChange: u => { const next = typeof u === "function" ? u(sortingSafe) : u; setSorting(next); p.onSortChange?.(next.map(s => ({ key: s.id, dir: s.desc ? "desc" : "asc" }))); },
   });
   const tableRows = table.getRowModel().rows;
   const scroller = useRef<HTMLDivElement>(null);
@@ -84,8 +89,9 @@ export function DataGrid(p: DataGridProps) {
     const k = (v - st.min) / (st.max - st.min); return { background: `color-mix(in srgb, var(--turf) ${Math.round(k * 70)}%, transparent)` };
   };
 
+  const auto = p.height === "auto";
   return (
-    <div className={`dg ${p.className ?? ""}`} style={{ height: p.height ?? "100%" }}>
+    <div className={`dg ${auto ? "auto" : ""} ${p.className ?? ""}`} style={{ height: auto ? undefined : p.height ?? "100%", maxHeight: auto ? "70vh" : undefined }}>
       {p.columnChooser && (
         <div className="dg-tools">
           <button className="btn ghost sm" type="button" onClick={() => setChooser(o => !o)}>Columns ({cols.length}/{all.length})</button>

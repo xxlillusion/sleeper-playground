@@ -92,6 +92,7 @@ export function pivot(rows: Row[], spec: ViewSpec): PivotResult {
   const formulas: { m: Measure; expr: ReturnType<Parser["parse"]> }[] = [];
   for (const m of spec.measures) {
     if (m.formula) { const expr = parser.parse(expandFormula(m.formula, base)); formulas.push({ m, expr }); }
+    else if (base.some(x => x.id === m.id)) continue;
     else if (m.col) base.push(m);
     else base.push({ ...m, agg: "count", col: m.col });
   }

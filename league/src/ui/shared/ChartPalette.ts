@@ -36,6 +36,23 @@ export function sequential(t: ChartTheme, x: number): string {
   const k = Math.max(0, Math.min(1, x));
   return `color-mix(in srgb, ${t.accent} ${Math.round(k * 85)}%, ${t.surface})`;
 }
+/* Hex ramps for canvas renderers (ECharts, Plot's SVG is fine with color-mix but canvas is not) */
+function hexToRgb(h: string): [number, number, number] | null {
+  const m = /^#?([0-9a-f]{6})$/i.exec(h.trim()); if (!m) return null;
+  const n = parseInt(m[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function mix(a: string, b: string, k: number): string {
+  const x = hexToRgb(a), y = hexToRgb(b); if (!x || !y) return k >= 0.5 ? b : a;
+  const c = x.map((v, i) => Math.round(v + (y[i] - v) * k));
+  return `#${c.map(v => v.toString(16).padStart(2, "0")).join("")}`;
+}
+/** Hex sequential ramp from surface to accent, x in [0,1] */
+export const sequentialHex = (t: ChartTheme, x: number) => mix(t.surface, t.accent, Math.max(0, Math.min(1, x)) * 0.85 + 0.05);
+/** Hex diverging ramp, x in [-1,1]: bad -> surface -> good */
+export const divergingHex = (t: ChartTheme, x: number) => { const k = Math.max(-1, Math.min(1, x)); return mix(t.surface, k >= 0 ? t.good : t.bad, Math.abs(k) * 0.8); };
+/** n evenly spaced hex stops of the sequential ramp, handy for ECharts visualMap.inRange.color */
+export const sequentialStops = (t: ChartTheme, n = 6) => Array.from({ length: n }, (_, i) => sequentialHex(t, i / (n - 1)));
+
 /** Diverging ramp: bad for negative, good for positive, x in [-1, 1] */
 export function diverging(t: ChartTheme, x: number): string {
   const k = Math.max(-1, Math.min(1, x));

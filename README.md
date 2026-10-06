@@ -14,6 +14,17 @@ Datasets, one tab each: **Teams** (standings per season with luck, all-play, str
 
 If the history looks short, the commissioner probably created a new league one year instead of renewing. Open **Options** and add that older season's league id to stitch it on.
 
+### Three UI prototypes
+
+The **Prototype** switch under the season chips (also `?ui=classic|ask|site|sheet`) swaps the whole interface while keeping the data. All three share one view description (`league/src/view/spec.ts`: dataset, rows, columns, measures, filters, sort, chart), so a view built in one can be opened in another through the `?v=` link, and every ready-made view is available in all of them.
+
+- **Classic**: today's tabs with Perspective's own controls.
+- **Ask** (`ui/ask`): a sentence, "from Teams show Total points for each Manager across Season where … sorted by …", whose chips open searchable pickers. Below it an answer card with a headline, an auto-chosen Observable Plot chart, and the result grid. Questions palette on Cmd/Ctrl-K, custom metric formulas, drill-through from any bar or cell.
+- **Stat site** (`ui/site`): a fantasy stat site by subject: KPI tiles, leaderboards with inline bars, percentile sliders, a record book, ECharts bump chart and heatmaps. Clicking any name adds a filter chip for the whole page. "Pivot this" on any section opens a Rows / Columns / Values / Filters sheet with live results.
+- **Sheet** (`ui/sheet`): Perspective stays the grid and chart engine, but a Numbers-style Organize panel drives it: tick fields to add them, Add buttons per section, formula columns validated by Perspective, saved views as pinned tabs.
+
+The pivot engine behind Ask and Stat site is plain TypeScript (`league/src/view/engine.ts`, tested with `npm test`); Sheet keeps Perspective's WebAssembly engine.
+
 ## Develop
 
 ```bash

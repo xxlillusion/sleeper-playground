@@ -18,5 +18,5 @@ export function useSpecHistory(initial: ViewSpec, max = 50) {
   const undo = useCallback(() => { const p = past.current.pop(); if (!p) return; setSpecState(cur => { future.current.push(cur); return p; }); tick(t => t + 1); }, []);
   const redo = useCallback(() => { const f = future.current.pop(); if (!f) return; setSpecState(cur => { past.current.push(cur); return f; }); tick(t => t + 1); }, []);
   const reset = useCallback((s: ViewSpec) => { past.current = []; future.current = []; setSpecState(s); tick(t => t + 1); }, []);
-  return useMemo(() => ({ spec, set, undo, redo, reset, canUndo: past.current.length > 0, canRedo: future.current.length > 0 }), [spec, set, undo, redo, reset]);
+  return useMemo(() => ({ spec, set, undo, redo, reset, canUndo: past.current.length > 0, canRedo: future.current.length > 0, depth: past.current.length }), [spec, set, undo, redo, reset]);
 }
